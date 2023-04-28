@@ -1,0 +1,3 @@
+[submodule "in-toto-layout-generator"]
+	path = in-toto-layout-generator
+	url = git@github.com:alanssitis/in-toto-layout-generator.git
