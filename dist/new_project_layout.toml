@@ -1,0 +1,21 @@
+[keys.alice]
+path = "keys/alice.pub"
+key_type = "rsa"
+
+[[steps]]
+name = "create"
+expected_products = ["CREATE *"]
+pubkeys = ["alice"]
+
+[[steps]]
+name = "build"
+expected_materials = [
+    "MATCH * IN /src WITH PRODUCTS FROM create",
+    "MATCH pyproject.toml WITH PRODUCTS FROM create",
+    "DISALLOW *",
+]
+expected_products = [
+    "CREATE dist/*-*-py3-none-any.whl",
+    "DISALLOW *",
+]
+pubkeys = ["alice"]

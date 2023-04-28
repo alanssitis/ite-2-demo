@@ -1,0 +1,39 @@
+[keys.alice]
+path = "keys/alice.pub"
+key_type = "rsa"
+
+[keys.bob]
+path = "keys/bob.pub"
+key_type = "rsa"
+
+[[steps]]
+name = "clone"
+expected_products = ["CREATE *"]
+pubkeys = ["alice", "bob"]
+
+[[steps]]
+name = "update"
+expected_materials = [
+    "MATCH * IN src/ WITH PRODUCTS FROM create",
+    "MATCH pyproject.toml WITH PRODUCTS FROM create",
+    "DISALLOW *",
+]
+expected_products = [
+    "MODIFY pyproject.toml",
+    "MODIFY src/main.py",
+    "DISALLOW *",
+]
+pubkeys = ["alice", "bob"]
+
+[[steps]]
+name = "build"
+expected_materials = [
+    "MATCH * IN src WITH PRODUCTS FROM update",
+    "MATCH pyproject.toml WITH PRODUCTS FROM update",
+    "DISALLOW *",
+]
+expected_products = [
+    "CREATE dist/*-*-py3-none-any.whl",
+    "DISALLOW *",
+]
+pubkeys = ["alice"]
