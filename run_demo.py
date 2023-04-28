@@ -48,6 +48,8 @@ def supply_chain():
 
     prompt_key("Download and verify wheel [Client]")
 
+    prompt_key("Setup layout to make changes [Alice]")
+
     prompt_key("Pull project [Bob]")
 
     prompt_key("Make changes [Bob]")
