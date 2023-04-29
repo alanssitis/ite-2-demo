@@ -12,6 +12,7 @@ name = "build"
 expected_materials = [
     "MATCH * IN /src WITH PRODUCTS FROM create",
     "MATCH pyproject.toml WITH PRODUCTS FROM create",
+    "ALLOW README.md",
     "DISALLOW *",
 ]
 expected_products = [

@@ -30,30 +30,47 @@ def supply_chain():
     # ====================================================================
 
     prompt_key("Define the supply chain layout [Alice]")
-    os.chdir("dist")
-    show_new_project_layout_cmd = "less new_project_layout.toml"
+    os.chdir("layouts")
+    show_new_project_layout_cmd = "more new_project_layout.toml"
     print(show_new_project_layout_cmd)
     subprocess.call(shlex.split(show_new_project_layout_cmd))
 
     prompt_key("Generate signed layout [Alice]")
-    create_layout_cmd = "in-toto-layout-gen --signer ../private_keys/alice new_project_layout.toml"
+    create_layout_cmd = ("in-toto-layout-gen --signer ../private_keys/alice "
+                         "new_project_layout.toml")
     print(create_layout_cmd)
     subprocess.call(shlex.split(create_layout_cmd))
 
-    prompt_key("Create project (Pull existing project) [Alice]")
+    prompt_key("Create project [Alice]")
+    os.chdir("../test-project")
+    create_project_in_toto_run_cmd = (
+        "in-toto-run --verbose --step-name create "
+        "--key ../private_keys/alice -p pyproject.toml README.md src "
+        "--metadata-directory ../dist --no-command")
+    print(create_layout_cmd)
+    subprocess.call(shlex.split(create_project_in_toto_run_cmd))
 
     prompt_key("Build project [Alice]")
+    build_project_alice_in_toto_run_cmd = (
+        "in-toto-run --verbose --step-name build "
+        "--key ../private_keys/alice -m pyproject.toml README.md src "
+        "-p test_project-0.0.1-py3-none-any.whl --metadata-directory ../dist "
+        "-- python3 -m build --wheel --outdir ../dist")
+    print(build_project_alice_in_toto_run_cmd)
+    subprocess.call(shlex.split(build_project_alice_in_toto_run_cmd))
 
     prompt_key("Upload wheel and in-toto metadata to RSTUF [Alice]")
+    print("TODO")
 
     prompt_key("Download and verify wheel [Client]")
+    print("TODO")
 
     prompt_key("Setup layout to make changes [Alice]")
 
     prompt_key("Pull project [Bob]")
 
     prompt_key("Make changes [Bob]")
-    
+
     prompt_key("Build and upload wheel and metadata [Alice]")
 
     prompt_key("Download and verify updated wheel [Client]")
