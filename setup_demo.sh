@@ -5,7 +5,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Install monkey-patched in-toto
+# Install in-toto-layout-generator
 git submodule update --init
 cd in-toto-layout-generator
 pip install .
