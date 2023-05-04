@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Install demo dependencies
 python3 -m venv venv
 source venv/bin/activate

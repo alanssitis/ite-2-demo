@@ -29,6 +29,7 @@ def supply_chain():
         os.mkdir("dist")
     if not os.path.exists("client"):
         os.mkdir("client")
+    copyfile("layouts/keys/alice.pub", "dist/alice.pub")
 
     # ====================================================================
     # Start project
@@ -42,10 +43,13 @@ def supply_chain():
 
     prompt_key("Generate signed layout [Alice]")
     generate_new_layout_cmd = (
-            "in-toto-layout-gen --signer ../private_keys/alice "
-            "new_project_layout.toml")
+        "in-toto-layout-gen --signer ../private_keys/alice "
+        "new_project_layout.toml")
     print(generate_new_layout_cmd)
     subprocess.call(shlex.split(generate_new_layout_cmd))
+    copy_layout_to_dist_cmd = "mv root.layout ../dist"
+    print(copy_layout_to_dist_cmd)
+    subprocess.call(shlex.split(copy_layout_to_dist_cmd))
 
     prompt_key("Create project [Alice]")
     os.chdir("../test-project")
@@ -64,31 +68,55 @@ def supply_chain():
         "-- python3 -m build --wheel --outdir .")
     print(build_project_alice_in_toto_run_cmd)
     subprocess.call(shlex.split(build_project_alice_in_toto_run_cmd))
+    mv_project_cmd = "mv test_project-0.0.1-py3-none-any.whl ../dist"
+    print(mv_project_cmd)
+    subprocess.call(shlex.split(mv_project_cmd))
 
     prompt_key("Upload wheel and in-toto metadata to RSTUF [Alice]")
     os.chdir("../dist")
     print("TODO")
 
     prompt_key("Download and verify wheel [Client]")
+    # Needs to be moved to "client side"
+    subprocess.call(
+        shlex.split(
+            "in-toto-verify --verbose --layout root.layout --layout-keys alice.pub"
+        ))
     os.chdir("../client")
-    print("TODO")
+    print("TODO WITH RSTUF impl")
+
+    prompt_key("Clear /dist and /client")
+    os.chdir("..")
+    clear_dist_cmd = "rm -rf dist"
+    print(clear_dist_cmd)
+    subprocess.call(shlex.split(clear_dist_cmd))
+    clear_client_cmd = "rm -rf client"
+    print(clear_client_cmd)
+    subprocess.call(shlex.split(clear_client_cmd))
+
+    if not os.path.exists("dist"):
+        os.mkdir("dist")
+    if not os.path.exists("client"):
+        os.mkdir("client")
+    copyfile("layouts/keys/alice.pub", "dist/alice.pub")
+    copyfile("layouts/keys/bob.pub", "dist/bob.pub")
 
     # ====================================================================
     # Make changes
     # ====================================================================
-    
-    # TODO: clean project directory
 
     prompt_key("Setup layout to make changes [Alice]")
-    os.chdir("../layouts")
+    os.chdir("layouts")
     show_change_project_layout_cmd = "more change_project_layout.toml"
     print(show_change_project_layout_cmd)
     subprocess.call(shlex.split(show_change_project_layout_cmd))
     generate_change_layout_cmd = (
-            "in-toto-layout-gen --signer ../private_keys/alice "
-            "change_project_layout.toml")
+        "in-toto-layout-gen --signer ../private_keys/alice "
+        "change_project_layout.toml")
     print(generate_change_layout_cmd)
     subprocess.call(shlex.split(generate_change_layout_cmd))
+    print(copy_layout_to_dist_cmd)
+    subprocess.call(shlex.split(copy_layout_to_dist_cmd))
 
     prompt_key("Pull project [Bob]")
     os.chdir("../test-project")
@@ -100,19 +128,46 @@ def supply_chain():
     subprocess.call(shlex.split(clone_project_in_toto_run_cmd))
 
     prompt_key("Make changes [Bob]")
-    print("TODO")
+
+    in_toto_record_start_bob_changes_cmd = (
+        "in-toto-record start --verbose --step-name update "
+        "--key ../private_keys/bob -m pyproject.toml README.md src")
+    print(in_toto_record_start_bob_changes_cmd)
+    subprocess.call(shlex.split(in_toto_record_start_bob_changes_cmd))
+
+    print("Copying pre-created files to project")
+    copyfile("../project_files/pyproject.toml.changed", "pyproject.toml")
+    copyfile("../project_files/main.py.changed", "src/main.py")
+
+    in_toto_record_stop_bob_changes_cmd = (
+        "in-toto-record stop --verbose --step-name update "
+        "--key ../private_keys/bob -p pyproject.toml README.md src")
+    print(in_toto_record_stop_bob_changes_cmd)
+    subprocess.call(shlex.split(in_toto_record_stop_bob_changes_cmd))
+
+    mv_update_link_cmd = "mv update.776a00e2.link ../dist"
+    print(mv_update_link_cmd)
+    subprocess.call(shlex.split(mv_update_link_cmd))
 
     prompt_key("Build and upload wheel and metadata [Alice]")
-    build_project_bob_in_toto_run_cmd = (
+    build_project_alice_in_toto_run_cmd = (
         "in-toto-run --verbose --step-name build "
-        "--key ../private_keys/bob -m pyproject.toml README.md src "
-        "-p test_project-0.0.1-py3-none-any.whl --metadata-directory ../dist "
+        "--key ../private_keys/alice -m pyproject.toml README.md src "
+        "-p test_project-0.0.2-py3-none-any.whl --metadata-directory ../dist "
         "-- python3 -m build --wheel --outdir .")
-    print(build_project_bob_in_toto_run_cmd)
-    subprocess.call(shlex.split(build_project_bob_in_toto_run_cmd))
+    print(build_project_alice_in_toto_run_cmd)
+    subprocess.call(shlex.split(build_project_alice_in_toto_run_cmd))
+    mv_project_cmd = "mv test_project-0.0.2-py3-none-any.whl ../dist"
+    print(mv_project_cmd)
+    subprocess.call(shlex.split(mv_project_cmd))
     os.chdir("../dist")
 
     prompt_key("Download and verify updated wheel [Client]")
+    # Needs to be moved to "client side"
+    subprocess.call(
+        shlex.split(
+            "in-toto-verify --verbose --layout root.layout --layout-keys alice.pub"
+        ))
     os.chdir("../client")
     print("TODO")
 
@@ -168,7 +223,9 @@ def main():
         print(TESTREPO)
 
     if args.clean:
-        print("LOTS TODO")
+        copyfile("project_files/pyproject.toml.original",
+                 "test-project/pyproject.toml")
+        copyfile("project_files/main.py.original", "test-project/src/main.py")
         sys.exit(0)
 
     if args.no_prompt:

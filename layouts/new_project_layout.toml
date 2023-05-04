@@ -10,13 +10,31 @@ pubkeys = ["alice"]
 [[steps]]
 name = "build"
 expected_materials = [
-    "MATCH * IN /src WITH PRODUCTS FROM create",
+    "MATCH src/* WITH PRODUCTS FROM create",
     "MATCH pyproject.toml WITH PRODUCTS FROM create",
     "ALLOW README.md",
     "DISALLOW *",
 ]
 expected_products = [
-    "CREATE dist/*-*-py3-none-any.whl",
+    "CREATE test_project-0.0.1-py3-none-any.whl",
     "DISALLOW *",
 ]
 pubkeys = ["alice"]
+
+[[inspect]]
+name = "unzip"
+run = "unzip test_project-0.0.1-py3-none-any.whl"
+expected_materials = [
+    "MATCH test_project-0.0.1-py3-none-any.whl WITH PRODUCTS FROM build",
+    "ALLOW root.layout",
+    "ALLOW *.pub",
+    "DISALLOW *",
+]
+expected_products = [
+    "MATCH *.py WITH MATERIALS IN src/ FROM build",
+    "MATCH test_project-0.0.1-py3-none-any.whl WITH MATERIALS FROM unzip",
+    "ALLOW test_project-0.0.1.dist-info/*",
+    "ALLOW root.layout",
+    "ALLOW *.pub",
+    "DISALLOW *",
+]

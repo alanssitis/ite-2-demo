@@ -14,13 +14,16 @@ pubkeys = ["alice", "bob"]
 [[steps]]
 name = "update"
 expected_materials = [
-    "MATCH * IN src/ WITH PRODUCTS FROM create",
-    "MATCH pyproject.toml WITH PRODUCTS FROM create",
+    "MATCH src/* WITH PRODUCTS FROM clone",
+    "MATCH pyproject.toml WITH PRODUCTS FROM clone",
+    "ALLOW README.md",
     "DISALLOW *",
 ]
 expected_products = [
     "MODIFY pyproject.toml",
     "MODIFY src/main.py",
+    "MATCH * WITH MATERIALS FROM update",
+    "ALLOW README.md",
     "DISALLOW *",
 ]
 pubkeys = ["alice", "bob"]
@@ -28,12 +31,13 @@ pubkeys = ["alice", "bob"]
 [[steps]]
 name = "build"
 expected_materials = [
-    "MATCH * IN src WITH PRODUCTS FROM update",
+    "MATCH src/* WITH PRODUCTS FROM update",
     "MATCH pyproject.toml WITH PRODUCTS FROM update",
+    "ALLOW README.md",
     "DISALLOW *",
 ]
 expected_products = [
-    "CREATE dist/*-*-py3-none-any.whl",
+    "CREATE test_project-0.0.2-py3-none-any.whl",
     "DISALLOW *",
 ]
 pubkeys = ["alice"]

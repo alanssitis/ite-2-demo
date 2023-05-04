@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "test-project"
+version = "0.0.1"
+authors = [
+    { name = "Alan Chung Ma", email = "alanchunggt@gmail.com" },
+]
+description = "Test Project"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+hello-world = "main:main"
