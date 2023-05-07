@@ -7,6 +7,9 @@ import shlex
 import subprocess
 import argparse
 from shutil import copyfile, rmtree
+import hashlib
+import binascii
+import requests
 
 NO_PROMPT = False
 TESTREPO = "alanssitis/test-project"
@@ -161,6 +164,111 @@ def supply_chain():
     print(mv_project_cmd)
     subprocess.call(shlex.split(mv_project_cmd))
     os.chdir("../dist")
+    print("Start a HTTP server to host the wheel and in-toto metadata")
+    start_server_cmd = "gnome-terminal -- python3 -m http.server"
+    subprocess.Popen(shlex.split(start_server_cmd))
+
+    # Calculate targets' length and b2sum
+    root_layout_path = 'root.layout'
+    alice_pub_path = 'alice.pub'
+    build_link_path = 'build.556caebd.link'
+    create_link_path = 'create.556caebd.link'
+    wheel_path = 'test_project-0.0.1-py3-none-any.whl'
+
+    with open(root_layout_path, 'rb') as f:
+        hash_root_layout = hashlib.blake2b(digest_size=32)
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_root_layout.update(chunk)
+    root_layout_bytes = hash_root_layout.digest()
+    root_layout_b2sum = binascii.hexlify(root_layout_bytes).decode('utf-8')
+    root_layout_length = os.path.getsize(root_layout_path)
+
+    with open(alice_pub_path, 'rb') as f:
+        hash_alice_pub = hashlib.blake2b(digest_size=32)
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_alice_pub.update(chunk)
+    alice_pub_bytes = hash_alice_pub.digest()
+    alice_pub_b2sum = binascii.hexlify(alice_pub_bytes).decode('utf-8')
+    alice_pub_length = os.path.getsize(alice_pub_path)
+
+    with open(build_link_path, 'rb') as f:
+        hash_build_link = hashlib.blake2b(digest_size=32)
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_build_link.update(chunk)
+    build_link_bytes = hash_build_link.digest()
+    build_link_b2sum = binascii.hexlify(build_link_bytes).decode('utf-8')
+    build_link_length = os.path.getsize(build_link_path)
+
+    with open(create_link_path, 'rb') as f:
+        hash_create_link = hashlib.blake2b(digest_size=32)
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_create_link.update(chunk)
+    create_link_bytes = hash_create_link.digest()
+    create_link_b2sum = binascii.hexlify(create_link_bytes).decode('utf-8')
+    create_link_length = os.path.getsize(create_link_path)
+
+    with open(wheel_path, 'rb') as f:
+        hash_wheel = hashlib.blake2b(digest_size=32)
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_wheel.update(chunk)
+    wheel_bytes = hash_wheel.digest()
+    wheel_b2sum = binascii.hexlify(wheel_bytes).decode('utf-8')
+    wheel_length = os.path.getsize(wheel_path)
+
+    post_target_url = 'http://localhost:80/api/v1/targets/'
+    post_target_body = {
+        "targets": [
+            {
+            "info": {
+                "length": root_layout_length,
+                "hashes": {
+                    "blake2b-256": root_layout_b2sum
+                }
+            },
+            "path": root_layout_path
+            },
+            {
+            "info": {
+                "length": alice_pub_length,
+                "hashes": {
+                    "blake2b-256": alice_pub_b2sum
+                }
+            },
+            "path": alice_pub_path
+            },
+            {
+            "info": {
+                "length": build_link_length,
+                "hashes": {
+                    "blake2b-256": build_link_b2sum
+                }
+            },
+            "path": build_link_path
+            },
+            {
+            "info": {
+                "length": create_link_length,
+                "hashes": {
+                    "blake2b-256": create_link_b2sum
+                }
+            },
+            "path": create_link_path
+            },
+            {
+            "info": {
+                "length": wheel_length,
+                "hashes": {
+                    "blake2b-256": wheel_b2sum
+                }
+            },
+            "path": wheel_path
+            }
+        ]
+    }
+
+    print("Uploading targets to rstuf...")
+    post_target_request = requests.post(post_target_url, json = post_target_body)
+    print(post_target_request.text)
 
     prompt_key("Download and verify updated wheel [Client]")
     # Needs to be moved to "client side"
