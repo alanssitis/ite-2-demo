@@ -36,7 +36,7 @@ def supply_chain():
 
     prompt_key("Define the supply chain layout [Alice]")
     os.chdir("layouts")
-    show_new_project_layout_cmd = "more new_project_layout.toml"
+    show_new_project_layout_cmd = "less new_project_layout.toml"
     print(show_new_project_layout_cmd)
     subprocess.call(shlex.split(show_new_project_layout_cmd))
 
@@ -112,7 +112,7 @@ def supply_chain():
 
     prompt_key("Setup layout to make changes [Alice]")
     os.chdir("layouts")
-    show_change_project_layout_cmd = "more change_project_layout.toml"
+    show_change_project_layout_cmd = "less change_project_layout.toml"
     print(show_change_project_layout_cmd)
     subprocess.call(shlex.split(show_change_project_layout_cmd))
     generate_change_layout_cmd = (
