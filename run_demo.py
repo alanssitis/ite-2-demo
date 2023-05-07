@@ -74,18 +74,28 @@ def supply_chain():
 
     prompt_key("Upload wheel and in-toto metadata to RSTUF [Alice]")
     os.chdir("../dist")
-    print("TODO")
+    upload_to_rstuf_cmd = (
+            "../rstuf-in-toto-client.py upload "
+            "test_project-0.0.1-py3-none-any.whl root.layout alice.pub "
+            "build.556caebd.link create.556caebd.link")
+    print(upload_to_rstuf_cmd)
+    subprocess.call(shlex.split(upload_to_rstuf_cmd))
 
     prompt_key("Download and verify wheel [Client]")
-    # Needs to be moved to "client side"
-    subprocess.call(
-        shlex.split(
-            "in-toto-verify --verbose --layout root.layout --layout-keys alice.pub"
-        ))
     os.chdir("../client")
-    print("TODO WITH RSTUF impl")
+    special_client_download_cmd = (
+            "../rstuf-in-toto-client.py download "
+            "test_project-0.0.1-py3-none-any.whl")
+    print(special_client_download_cmd)
+    subprocess.call(shlex.split(special_client_download_cmd))
 
-    prompt_key("Clear /dist and /client")
+    prompt_key("Run test project script [Client]")
+    pip_install_cmd = "pip install test_project-0.0.1-py3-none-any.whl"
+    print(pip_install_cmd)
+    subprocess.call(shlex.split(pip_install_cmd))
+    subprocess.call(shlex.split("hello-world"))
+
+    prompt_key("Clear /dist and /client and RSTUF bins")
     os.chdir("..")
     clear_dist_cmd = "rm -rf dist"
     print(clear_dist_cmd)
@@ -93,13 +103,18 @@ def supply_chain():
     clear_client_cmd = "rm -rf client"
     print(clear_client_cmd)
     subprocess.call(shlex.split(clear_client_cmd))
+    delete_rstuf_cmd = (
+            "./rstuf-in-toto-client.py delete root.layout alice.pub "
+            "create.556caebd.link build.556caebd.link "
+            "test_project-0.0.1-py3-none-any.whl")
+    print(delete_rstuf_cmd)
+    subprocess.call(shlex.split(delete_rstuf_cmd))
 
     if not os.path.exists("dist"):
         os.mkdir("dist")
     if not os.path.exists("client"):
         os.mkdir("client")
     copyfile("layouts/keys/alice.pub", "dist/alice.pub")
-    copyfile("layouts/keys/bob.pub", "dist/bob.pub")
 
     # ====================================================================
     # Make changes
@@ -163,13 +178,18 @@ def supply_chain():
     os.chdir("../dist")
 
     prompt_key("Download and verify updated wheel [Client]")
-    # Needs to be moved to "client side"
-    subprocess.call(
-        shlex.split(
-            "in-toto-verify --verbose --layout root.layout --layout-keys alice.pub"
-        ))
     os.chdir("../client")
-    print("TODO")
+    special_client_download_cmd = (
+            "../rstuf-in-toto-client.py download "
+            "test_project-0.0.2-py3-none-any.whl")
+    print(special_client_download_cmd)
+    subprocess.call(shlex.split(special_client_download_cmd))
+
+    prompt_key("Run test project script [Client]")
+    pip_install_cmd = "pip install test_project-0.0.2-py3-none-any.whl"
+    print(pip_install_cmd)
+    subprocess.call(shlex.split(pip_install_cmd))
+    subprocess.call(shlex.split("hello-world"))
 
     # ====================================================================
     # Compromise project
