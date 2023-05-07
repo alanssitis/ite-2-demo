@@ -76,7 +76,6 @@ def download(target: str) -> bool:
 
             if not download_file(updater, target):
                 return True
-            print(os.listdir(tmpdirname))
 
             cwd = os.getcwd()
             os.chdir(tmpdirname)
@@ -132,8 +131,6 @@ def add_target(filename, custom = None):
 
 def upload(target, layout, pubkey, links):
     """Upload a file to RSTUF"""
-    print(f"upload called, {target} {layout} {pubkey} {links}")
-
     targets = []
 
     try:

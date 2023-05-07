@@ -176,6 +176,12 @@ def supply_chain():
     print(mv_project_cmd)
     subprocess.call(shlex.split(mv_project_cmd))
     os.chdir("../dist")
+    upload_to_rstuf_cmd = (
+            "../rstuf-in-toto-client.py upload "
+            "test_project-0.0.2-py3-none-any.whl root.layout alice.pub "
+            "clone.776a00e2.link update.776a00e2.link build.556caebd.link")
+    print(upload_to_rstuf_cmd)
+    subprocess.call(shlex.split(upload_to_rstuf_cmd))
 
     prompt_key("Download and verify updated wheel [Client]")
     os.chdir("../client")
@@ -195,8 +201,7 @@ def supply_chain():
     # Compromise project
     # ====================================================================
 
-    print("Adversary does not have Alice's private key")
-    prompt_key("Tamper with source code [Adversary]")
+    prompt_key("Tamper with source code [Adversary]\nAdversary does not have Alice's private key")
     os.chdir("../test-project")
     print("TODO")
 
@@ -243,9 +248,12 @@ def main():
         print(TESTREPO)
 
     if args.clean:
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
         copyfile("project_files/pyproject.toml.original",
                  "test-project/pyproject.toml")
         copyfile("project_files/main.py.original", "test-project/src/main.py")
+        rmtree("dist")
+        rmtree("client")
         sys.exit(0)
 
     if args.no_prompt:
