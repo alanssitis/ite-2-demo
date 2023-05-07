@@ -177,9 +177,9 @@ def supply_chain():
     subprocess.call(shlex.split(mv_project_cmd))
     os.chdir("../dist")
     upload_to_rstuf_cmd = (
-            "../rstuf-in-toto-client.py upload "
-            "test_project-0.0.2-py3-none-any.whl root.layout alice.pub "
-            "clone.776a00e2.link update.776a00e2.link build.556caebd.link")
+        "../rstuf-in-toto-client.py upload "
+        "test_project-0.0.2-py3-none-any.whl root.layout alice.pub "
+        "clone.776a00e2.link update.776a00e2.link build.556caebd.link")
     print(upload_to_rstuf_cmd)
     subprocess.call(shlex.split(upload_to_rstuf_cmd))
 
@@ -252,8 +252,16 @@ def main():
         copyfile("project_files/pyproject.toml.original",
                  "test-project/pyproject.toml")
         copyfile("project_files/main.py.original", "test-project/src/main.py")
-        rmtree("dist")
-        rmtree("client")
+        if os.path.exists("dist"):
+            rmtree("dist")
+        if os.path.exists("client"):
+            rmtree("client")
+        subprocess.call(shlex.split(
+            "./rstuf-in-toto-client.py delete root.layout alice.pub "
+            "create.556caebd.link build.556caebd.link clone.776a00e2.link "
+            "update.776a00e2.link test_project-0.0.1-py3-none-any.whl "
+            "test_project-0.0.2-py3-none-any.whl"
+        ))
         sys.exit(0)
 
     if args.no_prompt:
