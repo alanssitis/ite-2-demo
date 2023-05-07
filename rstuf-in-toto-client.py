@@ -32,11 +32,13 @@ TARGET_URL = "http://127.0.0.1:8000/"
 ADD_TARGET_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzFfMmRmNjgwMzM1MWU4NDM1Yzk2NjAzZGZlZmZlNDQyY2QiLCJ1c2VybmFtZSI6ImFkbWluIiwicGFzc3dvcmQiOiJiJyQyYiQxMiQxd0syOVptcERMT0daaU9RMUxQLzdPV2JQanFJdnh4Vm0ueklTLkFNSFJOeXhXam03SmpoaSciLCJzY29wZXMiOlsid3JpdGU6dGFyZ2V0cyJdLCJleHAiOjE2ODM1Mjc2MjR9.LLTej6th3wue_tKsEnGcxuSA0Yt3hMRY64kPqhXV7as"
 DEL_TARGET_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzFfYmUxNjZhMTA3NTQwNGZmMjliNmE3ODY5ODRkMjJkY2UiLCJ1c2VybmFtZSI6ImFkbWluIiwicGFzc3dvcmQiOiJiJyQyYiQxMiQxd0syOVptcERMT0daaU9RMUxQLzdPV2JQanFJdnh4Vm0ueklTLkFNSFJOeXhXam03SmpoaSciLCJzY29wZXMiOlsiZGVsZXRlOnRhcmdldHMiXSwiZXhwIjoxNjgzODAzMTE0fQ.ZUXw_yL3g_N0JZ8Vj6JKOIjvxCjZJJhgls87QnPnBeQ"
 
+
 def build_metadata_dir(base_url: str) -> str:
     """build a unique and reproducible directory name for the repository url"""
     name = sha256(base_url.encode()).hexdigest()[:8]
     # TODO: Make this not windows hostile?
     return f"{Path.home()}/.local/share/tuf-example/{name}"
+
 
 def download(target: str, skip_in_toto_verify: bool) -> bool:
     """
@@ -52,10 +54,8 @@ def download(target: str, skip_in_toto_verify: bool) -> bool:
     metadata_dir = build_metadata_dir(METADATA_URL)
 
     if not os.path.isfile(f"{metadata_dir}/root.json"):
-        print(
-            "Download root metadata to "
-            f"{metadata_dir}/root.json"
-        )
+        print("Download root metadata to "
+              f"{metadata_dir}/root.json")
         return False
 
     print(f"Using trusted root in {metadata_dir}")
@@ -80,7 +80,8 @@ def download(target: str, skip_in_toto_verify: bool) -> bool:
             if not skip_in_toto_verify:
                 cwd = os.getcwd()
                 os.chdir(tmpdirname)
-                cmd = "in-toto-verify --verbose --layout root.layout --layout-keys alice.pub"
+                cmd = ("in-toto-verify --verbose --layout root.layout "
+                       "--layout-keys alice.pub")
                 subprocess.check_output(shlex.split(cmd))
                 os.chdir(cwd)
 
@@ -116,11 +117,12 @@ def download_file(updater, target):
     return True
 
 
-def add_target(filename, custom = None):
+def add_target(filename, custom=None):
     info = {
         "length": os.path.getsize(filename),
         "hashes": {
-            "blake2b-256": securesystemslib.hash.digest_filename(
+            "blake2b-256":
+            securesystemslib.hash.digest_filename(
                 filename, algorithm="blake2b-256").hexdigest()
         }
     }
@@ -142,9 +144,9 @@ def upload(target, layout, pubkey, links):
             targets.append(add_target(l))
 
         headers = {
-                "accept": "application/json",
-                "Authorization": f"Bearer {ADD_TARGET_TOKEN}",
-                "Content-Type": "application/json",
+            "accept": "application/json",
+            "Authorization": f"Bearer {ADD_TARGET_TOKEN}",
+            "Content-Type": "application/json",
         }
         r = requests.post(API_URL, headers=headers, json={"targets": targets})
         r.raise_for_status()
@@ -162,11 +164,13 @@ def upload(target, layout, pubkey, links):
 def delete(targets):
     try:
         headers = {
-                "accept": "application/json",
-                "Authorization": f"Bearer {DEL_TARGET_TOKEN}",
-                "Content-Type": "application/json",
+            "accept": "application/json",
+            "Authorization": f"Bearer {DEL_TARGET_TOKEN}",
+            "Content-Type": "application/json",
         }
-        r = requests.delete(API_URL, headers=headers, json={"targets": targets})
+        r = requests.delete(API_URL,
+                            headers=headers,
+                            json={"targets": targets})
         r.raise_for_status()
         print(f"Targets {targets} successfully deleted")
 
@@ -212,7 +216,7 @@ def main():
         help="Force file to install without in-toto-verify",
     )
 
-    # Upload 
+    # Upload
     upload_parser = sub_command.add_parser(
         "upload",
         help="Upload a target file",

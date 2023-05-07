@@ -70,17 +70,16 @@ def supply_chain():
     prompt_key("Upload wheel and in-toto metadata to RSTUF [Alice]")
     os.chdir("../dist")
     upload_to_rstuf_cmd = (
-            "../rstuf-in-toto-client.py upload "
-            "test_project-0.0.1-py3-none-any.whl root.layout alice.pub "
-            "build.556caebd.link create.556caebd.link")
+        "../rstuf-in-toto-client.py upload "
+        "test_project-0.0.1-py3-none-any.whl root.layout alice.pub "
+        "build.556caebd.link create.556caebd.link")
     print(upload_to_rstuf_cmd)
     subprocess.call(shlex.split(upload_to_rstuf_cmd))
 
     prompt_key("Download and verify wheel [Client]")
     os.chdir("../client")
-    special_client_download_cmd = (
-            "../rstuf-in-toto-client.py download "
-            "test_project-0.0.1-py3-none-any.whl")
+    special_client_download_cmd = ("../rstuf-in-toto-client.py download "
+                                   "test_project-0.0.1-py3-none-any.whl")
     print(special_client_download_cmd)
     subprocess.call(shlex.split(special_client_download_cmd))
 
@@ -95,9 +94,9 @@ def supply_chain():
     rmtree("dist")
     rmtree("client")
     delete_rstuf_cmd = (
-            "./rstuf-in-toto-client.py delete root.layout alice.pub "
-            "create.556caebd.link build.556caebd.link "
-            "test_project-0.0.1-py3-none-any.whl")
+        "./rstuf-in-toto-client.py delete root.layout alice.pub "
+        "create.556caebd.link build.556caebd.link "
+        "test_project-0.0.1-py3-none-any.whl")
     print(delete_rstuf_cmd)
     subprocess.call(shlex.split(delete_rstuf_cmd))
 
@@ -170,9 +169,8 @@ def supply_chain():
 
     prompt_key("Download and verify updated wheel [Client]")
     os.chdir("../client")
-    special_client_download_cmd = (
-            "../rstuf-in-toto-client.py download "
-            "test_project-0.0.2-py3-none-any.whl")
+    special_client_download_cmd = ("../rstuf-in-toto-client.py download "
+                                   "test_project-0.0.2-py3-none-any.whl")
     print(special_client_download_cmd)
     subprocess.call(shlex.split(special_client_download_cmd))
 
@@ -187,7 +185,8 @@ def supply_chain():
     # Compromise project
     # ====================================================================
 
-    prompt_key("Tamper with source code [Adversary]\nAdversary does not have Alice's private key")
+    prompt_key("Tamper with source code [Adversary]\n"
+               "Adversary does not have Alice's private key")
     os.chdir("../test-project")
     copyfile("../project_files/main.py.compromised", "src/main.py")
 
@@ -211,19 +210,20 @@ def supply_chain():
     if not os.path.exists("client"):
         os.mkdir("client")
     os.chdir("client")
-    special_client_download_cmd = (
-            "../rstuf-in-toto-client.py download "
-            "test_project-0.0.2-py3-none-any.whl")
+    special_client_download_cmd = ("../rstuf-in-toto-client.py download "
+                                   "test_project-0.0.2-py3-none-any.whl")
     print(special_client_download_cmd)
     subprocess.call(shlex.split(special_client_download_cmd))
 
-    prompt_key("Adversarial changes in wheel successfully caught\nForce download compromised wheel and run it")
+    prompt_key("Adversarial changes in wheel successfully caught\n"
+               "Force download compromised wheel and run it")
     client_force_download_cmd = (
-            "../rstuf-in-toto-client.py download --skip-in-toto-verify "
-            "test_project-0.0.2-py3-none-any.whl")
+        "../rstuf-in-toto-client.py download --skip-in-toto-verify "
+        "test_project-0.0.2-py3-none-any.whl")
     print(client_force_download_cmd)
     subprocess.call(shlex.split(client_force_download_cmd))
-    pip_install_cmd = "pip install --force-reinstall test_project-0.0.2-py3-none-any.whl"
+    pip_install_cmd = ("pip install --force-reinstall "
+                       "test_project-0.0.2-py3-none-any.whl")
     print(pip_install_cmd)
     subprocess.call(shlex.split(pip_install_cmd))
     print("run hello-world")
@@ -242,12 +242,12 @@ def clean():
         rmtree("dist")
     if os.path.exists("client"):
         rmtree("client")
-    subprocess.call(shlex.split(
-        "./rstuf-in-toto-client.py delete root.layout alice.pub "
-        "create.556caebd.link build.556caebd.link clone.776a00e2.link "
-        "update.776a00e2.link test_project-0.0.1-py3-none-any.whl "
-        "test_project-0.0.2-py3-none-any.whl"
-    ))
+    subprocess.call(
+        shlex.split(
+            "./rstuf-in-toto-client.py delete root.layout alice.pub "
+            "create.556caebd.link build.556caebd.link clone.776a00e2.link "
+            "update.776a00e2.link test_project-0.0.1-py3-none-any.whl "
+            "test_project-0.0.2-py3-none-any.whl"))
 
 
 def main():
