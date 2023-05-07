@@ -38,7 +38,7 @@ def build_metadata_dir(base_url: str) -> str:
     # TODO: Make this not windows hostile?
     return f"{Path.home()}/.local/share/tuf-example/{name}"
 
-def download(target: str) -> bool:
+def download(target: str, skip_in_toto_verify: bool) -> bool:
     """
     Download the target file using ``ngclient`` Updater.
 
@@ -77,11 +77,12 @@ def download(target: str) -> bool:
             if not download_file(updater, target):
                 return True
 
-            cwd = os.getcwd()
-            os.chdir(tmpdirname)
-            cmd = "in-toto-verify --verbose --layout root.layout --layout-keys alice.pub"
-            subprocess.check_output(shlex.split(cmd))
-            os.chdir(cwd)
+            if not skip_in_toto_verify:
+                cwd = os.getcwd()
+                os.chdir(tmpdirname)
+                cmd = "in-toto-verify --verbose --layout root.layout --layout-keys alice.pub"
+                subprocess.check_output(shlex.split(cmd))
+                os.chdir(cwd)
 
             dest = move(os.path.join(tmpdirname, target), DOWNLOAD_DIR)
             print(f"Target downloaded and available in {dest}")
@@ -205,6 +206,11 @@ def main():
         metavar="TARGET",
         help="Target file",
     )
+    download_parser.add_argument(
+        "--skip-in-toto-verify",
+        action="store_true",
+        help="Force file to install without in-toto-verify",
+    )
 
     # Upload 
     upload_parser = sub_command.add_parser(
@@ -260,7 +266,7 @@ def main():
 
     # initialize the TUF Client Example infrastructure
     if command_args.sub_command == "download":
-        if not download(command_args.target):
+        if not download(command_args.target, command_args.skip_in_toto_verify):
             return f"Failed to download {command_args.target}"
     elif command_args.sub_command == "upload":
         if not upload(command_args.target, command_args.layout,

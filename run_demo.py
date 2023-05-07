@@ -92,12 +92,8 @@ def supply_chain():
 
     prompt_key("Clear /dist and /client and RSTUF bins")
     os.chdir("..")
-    clear_dist_cmd = "rm -rf dist"
-    print(clear_dist_cmd)
-    subprocess.call(shlex.split(clear_dist_cmd))
-    clear_client_cmd = "rm -rf client"
-    print(clear_client_cmd)
-    subprocess.call(shlex.split(clear_client_cmd))
+    rmtree("dist")
+    rmtree("client")
     delete_rstuf_cmd = (
             "./rstuf-in-toto-client.py delete root.layout alice.pub "
             "create.556caebd.link build.556caebd.link "
@@ -125,8 +121,7 @@ def supply_chain():
         "change_project_layout.toml")
     print(generate_change_layout_cmd)
     subprocess.call(shlex.split(generate_change_layout_cmd))
-    print(copy_layout_to_dist_cmd)
-    subprocess.call(shlex.split(copy_layout_to_dist_cmd))
+    move("root.layout", "../dist")
 
     prompt_key("Pull project [Bob]")
     os.chdir("../test-project")
@@ -185,6 +180,7 @@ def supply_chain():
     pip_install_cmd = "pip install test_project-0.0.2-py3-none-any.whl"
     print(pip_install_cmd)
     subprocess.call(shlex.split(pip_install_cmd))
+    print("run hello-world")
     subprocess.call(shlex.split("hello-world"))
 
     # ====================================================================
@@ -199,6 +195,7 @@ def supply_chain():
     build_project_adversary_cmd = "python3 -m build --wheel --outdir ."
     print(build_project_adversary_cmd)
     subprocess.call(shlex.split(build_project_adversary_cmd))
+    os.remove(os.path.join("../dist", "test_project-0.0.2-py3-none-any.whl"))
     move("test_project-0.0.2-py3-none-any.whl", "../dist")
     os.chdir("../dist")
     upload_to_rstuf_cmd = (
@@ -209,12 +206,48 @@ def supply_chain():
     subprocess.call(shlex.split(upload_to_rstuf_cmd))
 
     prompt_key("Download and verify compromised wheel [Client]")
-    os.chdir("../client")
+    os.chdir("..")
+    rmtree("client")
+    if not os.path.exists("client"):
+        os.mkdir("client")
+    os.chdir("client")
     special_client_download_cmd = (
             "../rstuf-in-toto-client.py download "
             "test_project-0.0.2-py3-none-any.whl")
     print(special_client_download_cmd)
     subprocess.call(shlex.split(special_client_download_cmd))
+
+    prompt_key("Adversarial changes in wheel successfully caught\nForce download compromised wheel and run it")
+    client_force_download_cmd = (
+            "../rstuf-in-toto-client.py download --skip-in-toto-verify "
+            "test_project-0.0.2-py3-none-any.whl")
+    print(client_force_download_cmd)
+    subprocess.call(shlex.split(client_force_download_cmd))
+    pip_install_cmd = "pip install --force-reinstall test_project-0.0.2-py3-none-any.whl"
+    print(pip_install_cmd)
+    subprocess.call(shlex.split(pip_install_cmd))
+    print("run hello-world")
+    subprocess.call(shlex.split("hello-world"))
+
+    prompt_key("Demo cleanup")
+    os.chdir("..")
+    clean()
+
+
+def clean():
+    copyfile("project_files/pyproject.toml.original",
+             "test-project/pyproject.toml")
+    copyfile("project_files/main.py.original", "test-project/src/main.py")
+    if os.path.exists("dist"):
+        rmtree("dist")
+    if os.path.exists("client"):
+        rmtree("client")
+    subprocess.call(shlex.split(
+        "./rstuf-in-toto-client.py delete root.layout alice.pub "
+        "create.556caebd.link build.556caebd.link clone.776a00e2.link "
+        "update.776a00e2.link test_project-0.0.1-py3-none-any.whl "
+        "test_project-0.0.2-py3-none-any.whl"
+    ))
 
 
 def main():
@@ -231,19 +264,7 @@ def main():
 
     if args.clean:
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
-        copyfile("project_files/pyproject.toml.original",
-                 "test-project/pyproject.toml")
-        copyfile("project_files/main.py.original", "test-project/src/main.py")
-        if os.path.exists("dist"):
-            rmtree("dist")
-        if os.path.exists("client"):
-            rmtree("client")
-        subprocess.call(shlex.split(
-            "./rstuf-in-toto-client.py delete root.layout alice.pub "
-            "create.556caebd.link build.556caebd.link clone.776a00e2.link "
-            "update.776a00e2.link test_project-0.0.1-py3-none-any.whl "
-            "test_project-0.0.2-py3-none-any.whl"
-        ))
+        clean()
         sys.exit(0)
 
     if args.no_prompt:
