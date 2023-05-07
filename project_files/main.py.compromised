@@ -1,0 +1,4 @@
+def main():
+    print("hello world")
+    print("Bob was here!")
+    print("Evil change")

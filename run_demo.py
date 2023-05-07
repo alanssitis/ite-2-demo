@@ -1,12 +1,11 @@
 #!/bin/python3
 
 import os
-import re
 import sys
 import shlex
 import subprocess
 import argparse
-from shutil import copyfile, rmtree
+from shutil import copyfile, move, rmtree
 
 NO_PROMPT = False
 TESTREPO = "alanssitis/test-project"
@@ -47,9 +46,7 @@ def supply_chain():
         "new_project_layout.toml")
     print(generate_new_layout_cmd)
     subprocess.call(shlex.split(generate_new_layout_cmd))
-    copy_layout_to_dist_cmd = "mv root.layout ../dist"
-    print(copy_layout_to_dist_cmd)
-    subprocess.call(shlex.split(copy_layout_to_dist_cmd))
+    move("root.layout", "../dist")
 
     prompt_key("Create project [Alice]")
     os.chdir("../test-project")
@@ -68,9 +65,7 @@ def supply_chain():
         "-- python3 -m build --wheel --outdir .")
     print(build_project_alice_in_toto_run_cmd)
     subprocess.call(shlex.split(build_project_alice_in_toto_run_cmd))
-    mv_project_cmd = "mv test_project-0.0.1-py3-none-any.whl ../dist"
-    print(mv_project_cmd)
-    subprocess.call(shlex.split(mv_project_cmd))
+    move("test_project-0.0.1-py3-none-any.whl", "../dist")
 
     prompt_key("Upload wheel and in-toto metadata to RSTUF [Alice]")
     os.chdir("../dist")
@@ -159,10 +154,7 @@ def supply_chain():
         "--key ../private_keys/bob -p pyproject.toml README.md src")
     print(in_toto_record_stop_bob_changes_cmd)
     subprocess.call(shlex.split(in_toto_record_stop_bob_changes_cmd))
-
-    mv_update_link_cmd = "mv update.776a00e2.link ../dist"
-    print(mv_update_link_cmd)
-    subprocess.call(shlex.split(mv_update_link_cmd))
+    move("update.776a00e2.link", "../dist")
 
     prompt_key("Build and upload wheel and metadata [Alice]")
     build_project_alice_in_toto_run_cmd = (
@@ -172,9 +164,7 @@ def supply_chain():
         "-- python3 -m build --wheel --outdir .")
     print(build_project_alice_in_toto_run_cmd)
     subprocess.call(shlex.split(build_project_alice_in_toto_run_cmd))
-    mv_project_cmd = "mv test_project-0.0.2-py3-none-any.whl ../dist"
-    print(mv_project_cmd)
-    subprocess.call(shlex.split(mv_project_cmd))
+    move("test_project-0.0.2-py3-none-any.whl", "../dist")
     os.chdir("../dist")
     upload_to_rstuf_cmd = (
         "../rstuf-in-toto-client.py upload "
@@ -203,31 +193,28 @@ def supply_chain():
 
     prompt_key("Tamper with source code [Adversary]\nAdversary does not have Alice's private key")
     os.chdir("../test-project")
-    print("TODO")
+    copyfile("../project_files/main.py.compromised", "src/main.py")
 
     prompt_key("Build and upload new wheel and update RSTUF [Adversary]")
+    build_project_adversary_cmd = "python3 -m build --wheel --outdir ."
+    print(build_project_adversary_cmd)
+    subprocess.call(shlex.split(build_project_adversary_cmd))
+    move("test_project-0.0.2-py3-none-any.whl", "../dist")
     os.chdir("../dist")
-    print("TODO")
+    upload_to_rstuf_cmd = (
+        "../rstuf-in-toto-client.py upload "
+        "test_project-0.0.2-py3-none-any.whl root.layout alice.pub "
+        "clone.776a00e2.link update.776a00e2.link build.556caebd.link")
+    print(upload_to_rstuf_cmd)
+    subprocess.call(shlex.split(upload_to_rstuf_cmd))
 
     prompt_key("Download and verify compromised wheel [Client]")
     os.chdir("../client")
-    print("TODO")
-
-
-def extract_gh_repo(uri):
-    ssh_pattern = r'^git@github.com:([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+).git$'
-    repo = re.findall(ssh_pattern, uri)
-    if len(repo) > 0:
-        return repo[0]
-    https_pattern = r'^https://github.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+).git$'
-    repo = re.findall(https_pattern, uri)
-    if len(repo) > 0:
-        return repo[0]
-    regular_pattern = r'^([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)$'
-    repo = re.findall(regular_pattern, uri)
-    if len(repo) > 0:
-        return repo[0]
-    sys.exit(f'failed to extract github repo from "{uri}"')
+    special_client_download_cmd = (
+            "../rstuf-in-toto-client.py download "
+            "test_project-0.0.2-py3-none-any.whl")
+    print(special_client_download_cmd)
+    subprocess.call(shlex.split(special_client_download_cmd))
 
 
 def main():
@@ -241,11 +228,6 @@ def main():
                         help="Remove files created during demo.",
                         action="store_true")
     args = parser.parse_args()
-
-    if repo := os.getenv("TESTREPO"):
-        global TESTREPO
-        TESTREPO = extract_gh_repo(repo)
-        print(TESTREPO)
 
     if args.clean:
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
