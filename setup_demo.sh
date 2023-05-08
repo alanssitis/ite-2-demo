@@ -11,6 +11,16 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
+# Add environment variables
+echo "export ADD_TARGET_TOKEN=$( \
+    rstuf admin token generate -s write:targets \
+    | jq '.access_token' \
+    | tr -d '"')" >> venv/bin/activate
+echo "export DEL_TARGET_TOKEN=$( \
+    rstuf admin token generate -s delete:targets \
+    | jq '.access_token' \
+    | tr -d '"')" >> venv/bin/activate
+
 # Install in-toto-layout-generator
 git submodule update --init
 cd in-toto-layout-generator

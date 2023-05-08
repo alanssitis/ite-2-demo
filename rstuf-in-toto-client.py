@@ -29,8 +29,8 @@ CLIENT_EXAMPLE_DIR = os.path.dirname(os.path.abspath(__file__))
 API_URL = "http://127.0.0.1:80/api/v1/targets/"
 METADATA_URL = "http://127.0.0.1:8080/"
 TARGET_URL = "http://127.0.0.1:8000/"
-ADD_TARGET_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzFfMmRmNjgwMzM1MWU4NDM1Yzk2NjAzZGZlZmZlNDQyY2QiLCJ1c2VybmFtZSI6ImFkbWluIiwicGFzc3dvcmQiOiJiJyQyYiQxMiQxd0syOVptcERMT0daaU9RMUxQLzdPV2JQanFJdnh4Vm0ueklTLkFNSFJOeXhXam03SmpoaSciLCJzY29wZXMiOlsid3JpdGU6dGFyZ2V0cyJdLCJleHAiOjE2ODM1Mjc2MjR9.LLTej6th3wue_tKsEnGcxuSA0Yt3hMRY64kPqhXV7as"
-DEL_TARGET_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzFfYmUxNjZhMTA3NTQwNGZmMjliNmE3ODY5ODRkMjJkY2UiLCJ1c2VybmFtZSI6ImFkbWluIiwicGFzc3dvcmQiOiJiJyQyYiQxMiQxd0syOVptcERMT0daaU9RMUxQLzdPV2JQanFJdnh4Vm0ueklTLkFNSFJOeXhXam03SmpoaSciLCJzY29wZXMiOlsiZGVsZXRlOnRhcmdldHMiXSwiZXhwIjoxNjgzODAzMTE0fQ.ZUXw_yL3g_N0JZ8Vj6JKOIjvxCjZJJhgls87QnPnBeQ"
+ADD_TARGET_TOKEN = os.environ["ADD_TARGET_TOKEN"]
+DEL_TARGET_TOKEN = os.environ["DEL_TARGET_TOKEN"]
 
 
 def build_metadata_dir(base_url: str) -> str:
@@ -132,17 +132,38 @@ def add_target(filename, custom=None):
     return {"path": filename, "info": info}
 
 
-def upload(target, layout, pubkey, links):
-    """Upload a file to RSTUF"""
+def upload_layout(layout, keys):
+    targets = []
+
+    try:
+        targets.append(add_target(layout, {"in-toto": keys}))
+        for k in keys:
+            targets.append(add_target(k))
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {ADD_TARGET_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        r = requests.post(API_URL, headers=headers, json={"targets": targets})
+        r.raise_for_status()
+        print(f"Layout {layout} uploaded successfully along with metadata")
+
+    except Exception as e:
+        print(f"Failed to upload layout {layout}: {e}")
+        if logging.root.level < logging.ERROR:
+            traceback.print_exc()
+        return False
+
+    return True
+
+
+def upload_file(target, layout, links):
     targets = []
 
     try:
         targets.append(add_target(target, {"in-toto": [layout] + links}))
-        targets.append(add_target(layout, {"in-toto": [pubkey]}))
-        targets.append(add_target(pubkey))
         for l in links:
             targets.append(add_target(l))
-
         headers = {
             "accept": "application/json",
             "Authorization": f"Bearer {ADD_TARGET_TOKEN}",
@@ -216,27 +237,39 @@ def main():
         help="Force file to install without in-toto-verify",
     )
 
-    # Upload
-    upload_parser = sub_command.add_parser(
-        "upload",
-        help="Upload a target file",
+    # Upload layout
+    upload_layout_parser = sub_command.add_parser(
+        "upload-layout",
+        help="Upload in-toto layout",
     )
-    upload_parser.add_argument(
+    upload_layout_parser.add_argument(
+        "layout",
+        metavar="LAYOUT",
+        help="Root in-toto layout",
+    )
+    upload_layout_parser.add_argument(
+        "keys",
+        metavar="KEYS",
+        nargs='+',
+        help="Public keys for layout",
+    )
+
+    # Upload file
+    upload_file_parser = sub_command.add_parser(
+        "upload-file",
+        help="Upload a target file with in-toto metadata",
+    )
+    upload_file_parser.add_argument(
         "target",
         metavar="TARGET",
         help="Target file",
     )
-    upload_parser.add_argument(
+    upload_file_parser.add_argument(
         "layout",
         metavar="LAYOUT",
         help="Target layout",
     )
-    upload_parser.add_argument(
-        "key",
-        metavar="KEY",
-        help="Public key for layout",
-    )
-    upload_parser.add_argument(
+    upload_file_parser.add_argument(
         "links",
         metavar="LINKS",
         nargs='+',
@@ -272,10 +305,13 @@ def main():
     if command_args.sub_command == "download":
         if not download(command_args.target, command_args.skip_in_toto_verify):
             return f"Failed to download {command_args.target}"
-    elif command_args.sub_command == "upload":
-        if not upload(command_args.target, command_args.layout,
-                      command_args.key, command_args.links):
-            return f"Failed to upload {command_args.target}"
+    elif command_args.sub_command == "upload-layout":
+        if not upload_layout(command_args.layout, command_args.keys):
+            return f"Failed to upload layout {command_args.layout}"
+    elif command_args.sub_command == "upload-file":
+        if not upload_file(command_args.target, command_args.layout,
+                           command_args.links):
+            return f"Failed to upload target {command_args.target}"
     elif command_args.sub_command == "delete":
         if not delete(command_args.targets):
             return f"Failed to delete targets"
