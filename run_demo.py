@@ -40,13 +40,18 @@ def supply_chain():
     print(show_new_project_layout_cmd)
     subprocess.call(shlex.split(show_new_project_layout_cmd))
 
-    prompt_key("Generate signed layout [Alice]")
+    prompt_key("Generate and upload signed layout [Alice]")
     generate_new_layout_cmd = (
         "in-toto-layout-gen --signer ../private_keys/alice "
         "new_project_layout.toml")
     print(generate_new_layout_cmd)
     subprocess.call(shlex.split(generate_new_layout_cmd))
     move("root.layout", "../dist")
+    os.chdir("../dist")
+    upload_layout_cmd = (
+        "../rstuf-in-toto-client.py upload-layout root.layout alice.pub")
+    print(upload_layout_cmd)
+    subprocess.call(shlex.split(upload_layout_cmd))
 
     prompt_key("Create project [Alice]")
     os.chdir("../test-project")
@@ -70,8 +75,8 @@ def supply_chain():
     prompt_key("Upload wheel and in-toto metadata to RSTUF [Alice]")
     os.chdir("../dist")
     upload_to_rstuf_cmd = (
-        "../rstuf-in-toto-client.py upload "
-        "test_project-0.0.1-py3-none-any.whl root.layout alice.pub "
+        "../rstuf-in-toto-client.py upload-file "
+        "test_project-0.0.1-py3-none-any.whl root.layout "
         "build.556caebd.link create.556caebd.link")
     print(upload_to_rstuf_cmd)
     subprocess.call(shlex.split(upload_to_rstuf_cmd))
@@ -110,7 +115,7 @@ def supply_chain():
     # Make changes
     # ====================================================================
 
-    prompt_key("Setup layout to make changes [Alice]")
+    prompt_key("Generate and upload new layout to make changes [Alice]")
     os.chdir("layouts")
     show_change_project_layout_cmd = "less change_project_layout.toml"
     print(show_change_project_layout_cmd)
@@ -121,6 +126,9 @@ def supply_chain():
     print(generate_change_layout_cmd)
     subprocess.call(shlex.split(generate_change_layout_cmd))
     move("root.layout", "../dist")
+    os.chdir("../dist")
+    print(upload_layout_cmd)
+    subprocess.call(shlex.split(upload_layout_cmd))
 
     prompt_key("Pull project [Bob]")
     os.chdir("../test-project")
@@ -161,8 +169,8 @@ def supply_chain():
     move("test_project-0.0.2-py3-none-any.whl", "../dist")
     os.chdir("../dist")
     upload_to_rstuf_cmd = (
-        "../rstuf-in-toto-client.py upload "
-        "test_project-0.0.2-py3-none-any.whl root.layout alice.pub "
+        "../rstuf-in-toto-client.py upload-file "
+        "test_project-0.0.2-py3-none-any.whl root.layout "
         "clone.776a00e2.link update.776a00e2.link build.556caebd.link")
     print(upload_to_rstuf_cmd)
     subprocess.call(shlex.split(upload_to_rstuf_cmd))
@@ -198,8 +206,8 @@ def supply_chain():
     move("test_project-0.0.2-py3-none-any.whl", "../dist")
     os.chdir("../dist")
     upload_to_rstuf_cmd = (
-        "../rstuf-in-toto-client.py upload "
-        "test_project-0.0.2-py3-none-any.whl root.layout alice.pub "
+        "../rstuf-in-toto-client.py upload-file "
+        "test_project-0.0.2-py3-none-any.whl root.layout "
         "clone.776a00e2.link update.776a00e2.link build.556caebd.link")
     print(upload_to_rstuf_cmd)
     subprocess.call(shlex.split(upload_to_rstuf_cmd))
