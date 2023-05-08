@@ -37,25 +37,25 @@ expected_materials = [
     "DISALLOW *",
 ]
 expected_products = [
-    "CREATE test_project-0.0.2-py3-none-any.whl",
+    "CREATE *-*-py3-none-any.whl",
     "DISALLOW *",
 ]
 pubkeys = ["alice"]
 
 [[inspect]]
 name = "unzip"
-run = "unzip test_project-0.0.2-py3-none-any.whl"
+run = "unzip *-*-py3-none-any.whl"
 expected_materials = [
-    "MATCH test_project-0.0.2-py3-none-any.whl with PRODUCTS from build",
-    "ALLOW root.layout",
+    "MATCH *-*-py3-none-any.whl with PRODUCTS from build",
+    "ALLOW *.layout",
     "ALLOW *.pub",
     "DISALLOW *",
 ]
 expected_products = [
     "MATCH *.py WITH MATERIALS in src/ FROM build",
-    "MATCH test_project-0.0.2-py3-none-any.whl with MATERIALS FROM unzip",
-    "ALLOW test_project-0.0.2.dist-info/*",
-    "ALLOW root.layout",
+    "MATCH *-*-py3-none-any.whl with MATERIALS FROM unzip",
+    "ALLOW *-*.dist-info/*",
+    "ALLOW *.layout",
     "ALLOW *.pub",
     "DISALLOW *",
 ]
